@@ -1,0 +1,36 @@
+{
+  "figures": [
+    {
+      "id": "S-1",
+      "part": "S",
+      "type": "box",
+      "metric": "compliance_global",
+      "runs": [
+        "SANITY_BASELINE_HIGH",
+        "SANITY_BS_EDGE_HIGH",
+        "SANITY_LEO_ONLY_HIGH",
+        "SANITY_LEO_ONLY_ONBOARD_HIGH"
+      ],
+      "title": "Sanity compliance (high load)"
+    },
+    {
+      "id": "S-2",
+      "part": "S",
+      "type": "cdf",
+      "metric": "latency_ms",
+      "app_type": "Voice",
+      "runs": [
+        "SANITY_BASELINE_HIGH",
+        "SANITY_BS_EDGE_HIGH"
+      ],
+      "title": "Voice latency CDF (baseline vs BS edge)"
+    },
+    {
+      "id": "S-3",
+      "part": "S",
+      "type": "scatter",
+      "metric": "benefit_cost",
+      "title": "Benefit vs cost (sanity)"
+    }
+  ]
+}

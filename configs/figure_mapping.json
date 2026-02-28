@@ -1,0 +1,123 @@
+{
+  "figures": [
+    {
+      "id": "I-1",
+      "part": "I",
+      "type": "box",
+      "metric": "compliance_global",
+      "runs": ["P1-A", "P1-B", "P1-C", "P1-D", "P1-E"],
+      "title": "Global compliance (Part I)"
+    },
+    {
+      "id": "I-2",
+      "part": "I",
+      "type": "timeseries",
+      "metric": "latency_ms",
+      "app_type": "Voice",
+      "train_id": 0,
+      "bin_ms": 1000,
+      "runs": ["P1-D", "P1-E"],
+      "title": "Latency timeline with events (Part I)"
+    },
+    {
+      "id": "I-3",
+      "part": "I",
+      "type": "scatter",
+      "metric": "benefit_cost",
+      "title": "Benefit vs cost proxy (Part I)"
+    },
+    {
+      "id": "I-4",
+      "part": "I",
+      "type": "service_compliance",
+      "metric": "service_compliance",
+      "runs": ["P1-A", "P1-B", "P1-C", "P1-D", "P1-E"],
+      "title": "Compliance per service (Part I)"
+    },
+    {
+      "id": "I-5",
+      "part": "I",
+      "type": "worst_train",
+      "metric": "compliance_worst_train",
+      "runs": ["P1-A", "P1-B", "P1-C", "P1-D", "P1-E"],
+      "title": "Safety KPI: worst train compliance"
+    },
+    {
+      "id": "II-1",
+      "part": "II",
+      "type": "violin",
+      "metric": "compliance_global",
+      "runs": ["P2-A", "P2-B", "P2-C", "P2-D", "P2-E"],
+      "title": "Satellite edge impact (Part II)"
+    },
+    {
+      "id": "II-2",
+      "part": "II",
+      "type": "cdf",
+      "metric": "latency_ms",
+      "app_type": "Voice",
+      "runs": ["P2-A", "P2-B", "P2-C", "P2-D", "P2-E"],
+      "title": "Latency CDF by satellite mode (Part II)"
+    },
+    {
+      "id": "II-3",
+      "part": "II",
+      "type": "box",
+      "metric": "compliance_global",
+      "runs": ["P2-F", "P2-G"],
+      "title": "LEO-only compliance (Part II)"
+    },
+    {
+      "id": "II-4",
+      "part": "II",
+      "type": "box",
+      "metric": "p99_e2e_latency",
+      "runs": ["P2-A", "P2-B", "P2-C", "P2-D", "P2-E"],
+      "title": "Tail latency (p99) by satellite mode"
+    },
+    {
+      "id": "II-5",
+      "part": "II",
+      "type": "stacked",
+      "metric": "latency_decomposition",
+      "runs": ["P2-A", "P2-B", "P2-C", "P2-D", "P2-E"],
+      "title": "Latency component attribution (Part II)"
+    },
+    {
+      "id": "II-6",
+      "part": "II",
+      "type": "timeseries",
+      "metric": "latency_ms",
+      "app_type": "Video",
+      "train_id": 0,
+      "bin_ms": 1000,
+      "runs": ["P2-B", "P2-D"],
+      "title": "Latency timeline with detours (Part II)"
+    },
+    {
+      "id": "II-7",
+      "part": "II",
+      "type": "tail_components",
+      "metric": "tail_decomposition",
+      "runs": ["P2-A", "P2-B", "P2-D", "P2-E"],
+      "title": "Tail decomposition (p95 components)"
+    },
+    {
+      "id": "III-1",
+      "part": "III",
+      "type": "box",
+      "metric": "compliance_global",
+      "runs": ["P2-A", "P3-B", "P3-C", "P3-D"],
+      "title": "Terrestrial placement impact (Part III)"
+    },
+    {
+      "id": "III-2",
+      "part": "III",
+      "type": "cdf",
+      "metric": "latency_ms",
+      "app_type": "Voice",
+      "runs": ["P2-A", "P3-B", "P3-C", "P3-D"],
+      "title": "Latency CDF by terrestrial mode (Part III)"
+    }
+  ]
+}

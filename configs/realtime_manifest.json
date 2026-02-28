@@ -1,0 +1,6 @@
+{
+  "example_scenario": {
+    "csv_path": "scenarios/example_scenario.csv",
+    "slot_ms": 1000
+  }
+}

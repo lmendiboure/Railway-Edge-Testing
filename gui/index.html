@@ -1,0 +1,226 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Edge Replay Control Room</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <div class="bg-layer"></div>
+    <header class="run-header">
+      <div class="run-title">
+        <div class="eyebrow">Realtime Replay</div>
+        <h1>Edge Control Room</h1>
+        <p>Live comparison of edge configurations for 5G / SAT.</p>
+      </div>
+      <div class="run-context">
+        <div class="context-item">
+          <span class="label">Scenario</span>
+          <span id="context-scenario">—</span>
+        </div>
+        <div class="context-item">
+          <span class="label">Start</span>
+          <span id="context-start">—</span>
+        </div>
+        <div class="context-item">
+          <span class="label">t_rel</span>
+          <span id="context-rel">—</span>
+        </div>
+        <div class="context-item">
+          <span class="label">Runtime</span>
+          <span id="context-runtime">—</span>
+        </div>
+        <div class="context-item">
+          <span class="label">Baseline</span>
+          <span id="context-baseline">—</span>
+        </div>
+        <div class="context-item">
+          <span class="label">Availability</span>
+          <span class="status-pill" id="status-5g">5G</span>
+          <span class="status-pill" id="status-sat">SAT</span>
+        </div>
+        <div class="context-item">
+          <span class="label">Window fill</span>
+          <span id="context-window">—</span>
+        </div>
+      </div>
+    </header>
+
+    <div class="layout">
+      <aside class="controls">
+        <div class="panel">
+          <h2>Config groups</h2>
+          <label class="toggle">
+            <input type="checkbox" id="group-5g" checked />
+            <span>Terrestrial (5G)</span>
+          </label>
+          <label class="toggle">
+            <input type="checkbox" id="group-sat" checked />
+            <span>Satellite</span>
+          </label>
+          <label class="toggle">
+            <input type="checkbox" id="group-sat-partial" checked />
+            <span>Satellite partial</span>
+          </label>
+          <label class="toggle">
+            <input type="checkbox" id="toggle-baseline" checked />
+            <span>Compare to baseline</span>
+          </label>
+        </div>
+
+        <div class="panel">
+          <h2>View</h2>
+          <div class="control-row">
+            <label><input type="radio" name="tech-view" value="combined" checked /> Combined</label>
+            <label><input type="radio" name="tech-view" value="5g" /> 5G only</label>
+            <label><input type="radio" name="tech-view" value="sat" /> SAT only</label>
+          </div>
+          <div class="control-row">
+            <label><input type="radio" name="global-metric" value="min" checked /> global min</label>
+            <label><input type="radio" name="global-metric" value="mean" /> compliance mean</label>
+          </div>
+          <div class="control-row">
+            <label><input type="checkbox" id="toggle-services" /> show ETCS/Voice/Video</label>
+          </div>
+          <div class="control-row">
+            <label><input type="checkbox" id="toggle-explainers" checked /> show explainers</label>
+          </div>
+        </div>
+
+        <div class="panel">
+          <h2>Replay</h2>
+          <div class="control-row actions">
+            <button id="play-toggle">Pause</button>
+            <select id="speed-select">
+              <option value="0.5">0.5x</option>
+              <option value="1" selected>1x</option>
+              <option value="2">2x</option>
+              <option value="5">5x</option>
+            </select>
+          </div>
+          <div class="control-row">
+            <input type="range" id="timeline" min="0" max="0" value="0" />
+          </div>
+          <div class="control-row actions">
+            <button id="jump-event" disabled>Jump to event</button>
+          </div>
+        </div>
+      </aside>
+
+      <main class="dashboard">
+        <section class="panel scoreboard-panel">
+          <div class="panel-header">
+            <h2>KPI Scoreboard</h2>
+            <span>selected configs</span>
+          </div>
+          <div class="scoreboard-table" id="scoreboard-table"></div>
+        </section>
+
+        <section class="panel" id="primary-panel">
+          <div class="panel-header">
+            <h2 id="primary-title">Latency</h2>
+            <div class="segmented" id="primary-mode">
+              <button data-mode="latency" class="active">Latency</button>
+              <button data-mode="tail">Tail</button>
+            </div>
+          </div>
+          <div class="chart-grid" id="primary-grid">
+            <div class="chart-block" id="primary-5g-block">
+              <h3>5G</h3>
+              <canvas id="primary-5g"></canvas>
+              <div class="chart-legend" id="primary-5g-legend"></div>
+              <div class="legend-note" id="primary-5g-note"></div>
+            </div>
+            <div class="chart-block" id="primary-sat-block">
+              <h3>SAT</h3>
+              <canvas id="primary-sat"></canvas>
+              <div class="chart-legend" id="primary-sat-legend"></div>
+              <div class="legend-note" id="primary-sat-note"></div>
+            </div>
+          </div>
+        </section>
+
+        <section class="panel" id="secondary-panel">
+          <div class="panel-header">
+            <h2 id="secondary-title">Compliance</h2>
+            <div class="segmented" id="secondary-mode">
+              <button data-mode="compliance" class="active">Compliance</button>
+              <button data-mode="core">Bandwidth saved</button>
+            </div>
+          </div>
+          <div class="chart-grid" id="secondary-grid">
+            <div class="chart-block" id="secondary-5g-block">
+              <h3>5G</h3>
+              <canvas id="secondary-5g"></canvas>
+              <div class="chart-legend" id="secondary-5g-legend"></div>
+              <div class="chart-legend" id="secondary-5g-service-legend"></div>
+              <div class="legend-note" id="secondary-5g-note"></div>
+            </div>
+            <div class="chart-block" id="secondary-sat-block">
+              <h3>SAT</h3>
+              <canvas id="secondary-sat"></canvas>
+              <div class="chart-legend" id="secondary-sat-legend"></div>
+              <div class="chart-legend" id="secondary-sat-service-legend"></div>
+              <div class="legend-note" id="secondary-sat-note"></div>
+            </div>
+          </div>
+        </section>
+
+        <section class="panel" id="tertiary-panel">
+          <div class="panel-header">
+            <h2 id="tertiary-title">Trade-off</h2>
+            <div class="segmented" id="tertiary-mode">
+              <button data-mode="tradeoff" class="active">Trade-off</button>
+              <button data-mode="coverage">Sat coverage</button>
+            </div>
+          </div>
+          <div class="chart-block" id="tradeoff-block">
+            <canvas id="tradeoff"></canvas>
+            <div class="chart-legend" id="tradeoff-legend"></div>
+          </div>
+          <div class="chart-block" id="coverage-block">
+            <h3>Coverage impact (SAT)</h3>
+            <canvas id="coverage"></canvas>
+            <div class="chart-legend" id="coverage-legend"></div>
+            <div class="legend-note" id="coverage-note"></div>
+          </div>
+        </section>
+
+        <section class="panel" id="explainers">
+          <div class="panel-header">
+            <h2>Explainers</h2>
+            <span>how to read the metrics</span>
+          </div>
+          <div class="explain-grid">
+            <div class="explain-card">
+              <h3>Compliance</h3>
+              <p>
+                A slot is compliant if all KPIs for a service are met. Rolling compliance is the
+                ratio of compliant slots in the window. Global compliance = min(ETCS, Voice, Video).
+              </p>
+            </div>
+            <div class="explain-card">
+              <h3>Latency model</h3>
+              <p>
+                Edge latency is estimated from a rolling baseline (low‑percentile + smoothing +
+                floor), then reduced by the edge factor and increased by compute cost. Partial SAT
+                coverage blends raw and edge latency and adds a small detour penalty.
+              </p>
+            </div>
+            <div class="explain-card" id="config-explain"></div>
+          </div>
+        </section>
+
+      </main>
+    </div>
+
+    <script src="app.js"></script>
+  </body>
+</html>

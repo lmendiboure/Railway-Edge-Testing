@@ -1,0 +1,12 @@
+{
+  "figures": [
+    {
+      "id": "II-7",
+      "part": "II",
+      "type": "tail_components",
+      "metric": "tail_decomposition",
+      "runs": ["P2-A", "P2-B", "P2-D", "P2-E"],
+      "title": "Tail decomposition (p95 components)"
+    }
+  ]
+}

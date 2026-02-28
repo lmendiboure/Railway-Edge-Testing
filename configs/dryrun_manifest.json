@@ -1,0 +1,197 @@
+{
+  "version_string": "s5lect-v2.1",
+  "manifest_version": 1,
+  "seed_list": [101],
+  "simulation": {
+    "dt_ms": 10,
+    "duration_min": 1,
+    "speed_kmh": 250,
+    "speed_m_s": 69.44
+  },
+  "corridor": {
+    "segment_lengths_km": {
+      "OPEN": [5, 15],
+      "STATION": [0.5, 2],
+      "RURAL_GAP": [3, 10],
+      "TUNNEL": [0.5, 5],
+      "CUTTING": [1, 4]
+    },
+    "segment_type_weights": {
+      "OPEN": 0.35,
+      "STATION": 0.1,
+      "RURAL_GAP": 0.25,
+      "TUNNEL": 0.2,
+      "CUTTING": 0.1
+    },
+    "tunnel_mode": "5G_ONLY"
+  },
+  "connectivity": {
+    "mapping": {
+      "OPEN": "DUAL",
+      "STATION": "DUAL",
+      "CUTTING": "DUAL",
+      "RURAL_GAP": "LEO_ONLY",
+      "TUNNEL": "TUNNEL_MODE"
+    },
+    "state_change_spike_ms": [50, 200],
+    "state_change_duration_ms": [100, 300]
+  },
+  "beam_switch": {
+    "rate_per_min": 2,
+    "spike_ms": [30, 80],
+    "duration_ms": 200,
+    "correlation_probability": 0.6
+  },
+  "traffic": {
+    "ETCS2": {
+      "packet_bytes": 256,
+      "interval_ms": 500
+    },
+    "Voice": {
+      "packet_bytes": 100,
+      "interval_ms": 20,
+      "jitter_buffer_ms": 60
+    },
+    "Video": {
+      "packet_bytes": 1200,
+      "bitrate_mbps": {
+        "LQ": 1.5,
+        "HQ": 5.0
+      }
+    },
+    "video_profile": "LQ",
+    "video_mode": "RAW_HQ",
+    "video_modes": {
+      "RAW_LQ": {"min_rate_mbps": 0.9, "qoe_service": "RAW_STREAM"},
+      "RAW_HQ": {"min_rate_mbps": 4.0, "qoe_service": "RAW_STREAM"},
+      "EDGE_FILTERED": {"min_rate_mbps": 0.3, "qoe_service": "EDGE_FILTERED_QOE"}
+    }
+  },
+  "network_profiles": {
+    "5G": {
+      "rtt_p50_ms": 40,
+      "rtt_p95_ms": 60,
+      "rtt_max_ms": 100,
+      "capacity_mbps": 200,
+      "jitter_p95_ms": 6
+    },
+    "LEO": {
+      "rtt_p50_ms": 55,
+      "rtt_p95_ms": 110,
+      "rtt_p99_ms": 160,
+      "rtt_max_ms": 160,
+      "capacity_mbps": 50,
+      "jitter_p95_ms": 25
+    }
+  },
+  "topology": {
+    "regions": 4,
+    "base_stations_per_region": 5,
+    "beams_per_region": 3,
+    "gateways_per_region": 2
+  },
+  "allocation_policy": {
+    "mode": "WEIGHTED",
+    "weights": {
+      "ETCS2": 5,
+      "Voice": 3,
+      "Video": 1
+    }
+  },
+  "detour_policy": "NEAREST_LATENCY",
+  "access_policy": "MIN_RTT_TIE_5G",
+  "kpi_thresholds": {
+    "ETCS2": {
+      "latency_ms": 3500,
+      "jitter_ms": 250,
+      "throughput_mbps": 0.004,
+      "loss_ratio": 0.01
+    },
+    "Voice": {
+      "latency_ms": 75,
+      "jitter_ms": 60,
+      "throughput_mbps": 0.04,
+      "loss_ratio": 0.01
+    },
+    "Video": {
+      "latency_ms": 300,
+      "jitter_ms": 30,
+      "throughput_mbps": 4.0,
+      "loss_ratio": 0.02
+    }
+  },
+  "kpi_windows": {
+    "throughput_ms": 1000
+  },
+  "compute_profiles": {
+    "gateway": {"mu_pkt_s": 10000, "q_max": 1000},
+    "onboard": {"mu_pkt_s": 4600, "q_max": 500},
+    "cloud": {"mu_pkt_s": 52000, "q_max": 5000},
+    "bs_edge": {"mu_pkt_s": 2400, "q_max": 1000},
+    "regional_edge": {"mu_pkt_s": 9000, "q_max": 2000}
+  },
+  "compute_kappa": {
+    "cloud": 1.0,
+    "regional_edge": 1.1,
+    "bs_edge": 1.2,
+    "gateway": 1.3,
+    "onboard": 1.6
+  },
+  "compute_variability": {
+    "service_median_ms": 3.5,
+    "service_sigma": 0.3,
+    "service_min_ms": 1.0,
+    "service_max_ms": 10.0
+  },
+  "access_load": {
+    "radio_queue_max_ms": {"5G": 15.0, "LEO": 25.0},
+    "spike_prob_base": {"5G": 0.01, "LEO": 0.02},
+    "spike_prob_slope": {"5G": 0.2, "LEO": 0.3},
+    "spike_amp_range_ms": {"5G": [5.0, 15.0], "LEO": [10.0, 25.0]},
+    "offload_factor": {
+      "5G": {
+        "TER_BS_EDGE": 0.25,
+        "TER_REGIONAL_EDGE": 0.15,
+        "TER_NATIONAL": 0.0,
+        "TER_NO_EDGE": 0.0
+      },
+      "LEO": {
+        "SAT_ONBOARD": 0.3,
+        "SAT_GW_EDGE": 0.0,
+        "SAT_TRANSPARENT": 0.0
+      }
+    },
+    "spike_duration_steps": {
+      "5G": {"base": 1, "slope": 4, "max": 10},
+      "LEO": {"base": 1, "slope": 5, "max": 12}
+    },
+    "spike_amp_dampening": {
+      "5G": {
+        "TER_BS_EDGE": 0.8,
+        "TER_REGIONAL_EDGE": 0.9,
+        "TER_NATIONAL": 1.0,
+        "TER_NO_EDGE": 1.0
+      },
+      "LEO": {
+        "SAT_ONBOARD": 0.75,
+        "SAT_GW_EDGE": 0.85,
+        "SAT_TRANSPARENT": 1.0
+      }
+    }
+  },
+  "detour_links": {
+    "gw_gw_capacity_mbps": 200,
+    "sat_sat_capacity_mbps": 50
+  },
+  "compute_policy": {
+    "enabled_apps": ["Video"]
+  },
+  "loads": {
+    "low": 1,
+    "med": 10,
+    "high": 50
+  },
+  "runs": [
+    {"id": "P1-A", "part": "I", "ter_mode": "TER_NO_EDGE", "sat_mode": "SAT_TRANSPARENT", "load": "low", "connectivity_override": "DEFAULT"}
+  ]
+}

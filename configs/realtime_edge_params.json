@@ -1,0 +1,83 @@
+{
+  "window_s": 120,
+  "ewma_lambda": 0.2,
+  "bnom_5g_ms": 25,
+  "bnom_sat_ms": 55,
+  "beta_video_filter": 0.35,
+  "beta_video_filter_by_config": {
+    "C1": 0.35,
+    "C2": 0.40,
+    "C3": 0.30,
+    "C4": 0.25,
+    "C5": 0.33
+  },
+  "beta_video_filter_by_level": {
+    "TER_BS_EDGE__SAT_TRANSPARENT": 0.35,
+    "TER_REGIONAL_EDGE__SAT_TRANSPARENT": 0.40,
+    "TER_NO_EDGE__SAT_GW_EDGE": 0.30,
+    "TER_NO_EDGE__SAT_ONBOARD": 0.25,
+    "TER_BS_EDGE__SAT_GW_EDGE": 0.33
+  },
+  "sat_edge_fraction_by_level": {
+    "SAT_TRANSPARENT": 0.0,
+    "SAT_GW_EDGE": 1.0,
+    "SAT_ONBOARD": 1.0
+  },
+  "sat_detour_ms_by_level": {
+    "SAT_TRANSPARENT": 0.0,
+    "SAT_GW_EDGE": 8.0,
+    "SAT_ONBOARD": 12.0
+  },
+  "edge_configs": [
+    {"config_id": "C0", "ter": "TER_NO_EDGE", "sat": "SAT_TRANSPARENT", "video_filter": false},
+    {"config_id": "C1", "ter": "TER_BS_EDGE", "sat": "SAT_TRANSPARENT", "video_filter": true},
+    {"config_id": "C2", "ter": "TER_REGIONAL_EDGE", "sat": "SAT_TRANSPARENT", "video_filter": true},
+    {"config_id": "C3", "ter": "TER_NO_EDGE", "sat": "SAT_GW_EDGE", "video_filter": true},
+    {"config_id": "C3_P50", "ter": "TER_NO_EDGE", "sat": "SAT_GW_EDGE", "video_filter": true, "sat_edge_fraction": 0.5},
+    {"config_id": "C3_P75", "ter": "TER_NO_EDGE", "sat": "SAT_GW_EDGE", "video_filter": true, "sat_edge_fraction": 0.75},
+    {"config_id": "C4", "ter": "TER_NO_EDGE", "sat": "SAT_ONBOARD", "video_filter": true},
+    {"config_id": "C4_P50", "ter": "TER_NO_EDGE", "sat": "SAT_ONBOARD", "video_filter": true, "sat_edge_fraction": 0.5},
+    {"config_id": "C4_P75", "ter": "TER_NO_EDGE", "sat": "SAT_ONBOARD", "video_filter": true, "sat_edge_fraction": 0.75},
+    {"config_id": "C5", "ter": "TER_BS_EDGE", "sat": "SAT_GW_EDGE", "video_filter": true}
+  ],
+  "alpha": {
+    "5g": {
+      "C0": 1.0,
+      "C1": 0.7,
+      "C2": 0.8,
+      "C3": 1.0,
+      "C3_P50": 1.0,
+      "C3_P75": 1.0,
+      "C4": 1.0,
+      "C4_P50": 1.0,
+      "C4_P75": 1.0,
+      "C5": 0.7
+    },
+    "sat": {
+      "C0": 1.0,
+      "C1": 1.0,
+      "C2": 1.0,
+      "C3": 0.8,
+      "C3_P50": 0.8,
+      "C3_P75": 0.8,
+      "C4": 0.7,
+      "C4_P50": 0.7,
+      "C4_P75": 0.7,
+      "C5": 0.8
+    }
+  },
+  "compute_cloud_lognorm_mu": 1.253,
+  "compute_cloud_lognorm_sigma": 0.3,
+  "compute_cloud_min_ms": 1.0,
+  "compute_cloud_max_ms": 10.0,
+  "k_loc": {
+    "cloud": 1.0,
+    "ter_national": 1.0,
+    "ter_regional": 1.1,
+    "ter_bs": 1.2,
+    "sat_gw": 1.3,
+    "sat_onboard": 1.6
+  },
+  "kpi_manifest": "configs/paper_manifest.json",
+  "output_root": "runs/realtime_replay"
+}
