@@ -1,4 +1,4 @@
-# S5LECT Edge Evaluation Platform
+# Edge Evaluation Platform
 
 This repository provides two ways to evaluate edge placement for a hybrid 5G + LEO setup:
 
