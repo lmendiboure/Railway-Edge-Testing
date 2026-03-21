@@ -49,7 +49,7 @@ def _read_slots(path: Path, limit: Optional[int]) -> list:
 
 
 def _find_latest_run(output_root: Path) -> Optional[Path]:
-    candidates = list(output_root.glob("*/*/slot_metrics.jsonl"))
+    candidates = list(output_root.glob("**/slot_metrics.jsonl"))
     if not candidates:
         return None
     latest = max(candidates, key=lambda path: path.stat().st_mtime)
@@ -59,6 +59,31 @@ def _find_latest_run(output_root: Path) -> Optional[Path]:
 class GuiHandler(BaseHTTPRequestHandler):
     base_dir: Path
     run_dir: Path
+    output_root: Path
+    default_scenario: Optional[str]
+    fixed_run_dir: bool
+
+    def _ensure_run_dir(self) -> None:
+        if getattr(self, "fixed_run_dir", False):
+            return
+        search_root = self.output_root
+        if self.default_scenario:
+            candidate = self.output_root / self.default_scenario
+            if candidate.exists():
+                search_root = candidate
+        latest = _find_latest_run(search_root)
+        if latest is None:
+            return
+        current_slot = self.run_dir / "slot_metrics.jsonl"
+        if not current_slot.exists():
+            self.run_dir = latest
+            return
+        latest_slot = latest / "slot_metrics.jsonl"
+        try:
+            if latest_slot.stat().st_mtime > current_slot.stat().st_mtime:
+                self.run_dir = latest
+        except FileNotFoundError:
+            self.run_dir = latest
 
     def _json(self, status: int, payload: dict) -> None:
         data = json.dumps(payload).encode("utf-8")
@@ -72,7 +97,11 @@ class GuiHandler(BaseHTTPRequestHandler):
         parsed = urlparse(self.path)
         path = parsed.path
         if path == "/api/latest":
+            self._ensure_run_dir()
             slot_path = self.run_dir / "slot_metrics.jsonl"
+            if not slot_path.exists():
+                self._json(200, {"ok": False, "message": "no runs yet"})
+                return
             latest = _read_last_json(slot_path)
             if latest is None:
                 self._json(200, {"ok": False, "message": "no data"})
@@ -81,7 +110,11 @@ class GuiHandler(BaseHTTPRequestHandler):
             return
 
         if path == "/api/slots":
+            self._ensure_run_dir()
             slot_path = self.run_dir / "slot_metrics.jsonl"
+            if not slot_path.exists():
+                self._json(200, {"ok": False, "message": "no runs yet", "payload": []})
+                return
             query = parse_qs(parsed.query)
             limit = query.get("limit", [None])[0]
             limit_int = int(limit) if limit else None
@@ -90,12 +123,14 @@ class GuiHandler(BaseHTTPRequestHandler):
             return
 
         if path == "/api/info":
+            self._ensure_run_dir()
             config_path = self.run_dir / "config_used.json"
             summary_path = self.run_dir / "summary.json"
             info = {
                 "run_dir": str(self.run_dir),
                 "config_used": None,
                 "summary": None,
+                "waiting": not (self.run_dir / "slot_metrics.jsonl").exists(),
             }
             if config_path.exists():
                 info["config_used"] = json.loads(config_path.read_text(encoding="utf-8"))
@@ -130,11 +165,16 @@ class GuiHandler(BaseHTTPRequestHandler):
 
 
 def main() -> None:
+    default_runs = os.getenv("GUI_RUNS_DIR", "runs/realtime_replay")
+    default_run_dir = os.getenv("GUI_RUN_DIR")
+    default_host = os.getenv("GUI_HOST", "0.0.0.0")
+    default_port = int(os.getenv("GUI_PORT", "8001"))
+
     parser = argparse.ArgumentParser()
-    parser.add_argument("--host", default="0.0.0.0")
-    parser.add_argument("--port", type=int, default=8001)
-    parser.add_argument("--run-dir", default=None)
-    parser.add_argument("--output-root", default="runs/realtime_replay")
+    parser.add_argument("--host", default=default_host)
+    parser.add_argument("--port", type=int, default=default_port)
+    parser.add_argument("--run-dir", default=default_run_dir)
+    parser.add_argument("--output-root", default=default_runs)
     args = parser.parse_args()
 
     base_dir = Path(__file__).resolve().parent.parent / "gui"
@@ -147,12 +187,22 @@ def main() -> None:
         if not run_dir.is_absolute():
             run_dir = Path.cwd() / run_dir
     else:
-        run_dir = _find_latest_run(output_root)
+        default_scenario = os.getenv("GUI_DEFAULT_SCENARIO")
+        run_dir = None
+        if default_scenario:
+            candidate = output_root / default_scenario
+            if candidate.exists():
+                run_dir = _find_latest_run(candidate)
         if run_dir is None:
-            raise SystemExit("No slot_metrics.jsonl found under output_root")
+            run_dir = _find_latest_run(output_root)
+        if run_dir is None:
+            run_dir = output_root
 
     GuiHandler.base_dir = base_dir
     GuiHandler.run_dir = run_dir
+    GuiHandler.output_root = output_root
+    GuiHandler.default_scenario = os.getenv("GUI_DEFAULT_SCENARIO")
+    GuiHandler.fixed_run_dir = bool(args.run_dir)
 
     server = ThreadingHTTPServer((args.host, args.port), GuiHandler)
     try:

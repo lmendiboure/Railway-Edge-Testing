@@ -1,0 +1,39 @@
+services:
+  edge-simulator:
+    build:
+      context: .
+      dockerfile: simulator/Dockerfile
+    container_name: edge-simulator
+    environment:
+      SIM_PORT: ${SIM_PORT:-8080}
+      SIM_AGENT_ID: ${SIM_AGENT_ID:-railenium-edge-simulator}
+      SIM_CONFIG_DIR: ${SIM_CONFIG_DIR:-/app/configs}
+      SIM_SCENARIO_DIR: ${SIM_SCENARIO_DIR:-/app/scenarios}
+      SIM_RUNS_DIR: ${SIM_RUNS_DIR:-/app/runs}
+      SIM_TIMEZONE: ${SIM_TIMEZONE:-UTC}
+    volumes:
+      - ./scenarios:/app/scenarios:ro
+      - ./runs:/app/runs
+      - ./configs:/app/configs:ro
+    ports:
+      - "${SIM_PORT:-8080}:${SIM_PORT:-8080}"
+    restart: unless-stopped
+
+  edge-gui:
+    build:
+      context: .
+      dockerfile: gui/Dockerfile
+    container_name: edge-gui
+    environment:
+      GUI_PORT: ${GUI_PORT:-8501}
+      GUI_RUNS_DIR: ${GUI_RUNS_DIR:-/app/runs}
+      GUI_CONFIG_DIR: ${GUI_CONFIG_DIR:-/app/configs}
+      GUI_DEFAULT_SCENARIO: ${GUI_DEFAULT_SCENARIO:-example_scenario}
+    volumes:
+      - ./runs:/app/runs:ro
+      - ./configs:/app/configs:ro
+    ports:
+      - "${GUI_PORT:-8501}:${GUI_PORT:-8501}"
+    depends_on:
+      - edge-simulator
+    restart: unless-stopped

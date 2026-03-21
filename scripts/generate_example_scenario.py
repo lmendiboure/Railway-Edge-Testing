@@ -19,7 +19,7 @@ def main() -> None:
         speed = 17.0 + 2.0 * math.sin(i / 40.0) + 0.5 * math.sin(i / 9.0)
 
         avail_5g = not (120 <= i < 180 or 420 <= i < 450)
-        avail_sat = (200 <= i < 520) and not (300 <= i < 330)
+        avail_sat = True
 
         if avail_5g:
             e2e_5g = 38.0 + 7.0 * abs(math.sin(i / 18.0)) + 2.0 * math.sin(i / 11.0)

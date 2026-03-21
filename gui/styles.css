@@ -339,6 +339,11 @@ select {
   color: var(--muted);
 }
 
+#coverage-tooltip {
+  font-size: 11px;
+  color: var(--ink);
+}
+
 .summary-table {
   display: grid;
   gap: 6px;

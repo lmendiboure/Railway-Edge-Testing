@@ -60,6 +60,7 @@ const elements = {
   coverage: document.getElementById("coverage"),
   coverageLegend: document.getElementById("coverage-legend"),
   coverageNote: document.getElementById("coverage-note"),
+  coverageTooltip: document.getElementById("coverage-tooltip"),
   coverageBlock: document.getElementById("coverage-block"),
   primary5gBlock: document.getElementById("primary-5g-block"),
   primarySatBlock: document.getElementById("primary-sat-block"),
@@ -128,6 +129,31 @@ function indexSlot(slot) {
     map.get(item.config_id)[item.techno] = item;
   });
   slot._configMap = map;
+}
+
+function mergeConfigMetaFromSlot(slot) {
+  let changed = false;
+  slot.edge_results.forEach((item) => {
+    if (!state.configMeta[item.config_id]) {
+      state.configMeta[item.config_id] = {
+        config_id: item.config_id,
+        ter: item.ter_level,
+        sat: item.sat_level,
+        sat_edge_fraction: null,
+      };
+      changed = true;
+    }
+    if (item.techno === "sat" && item.edge_fraction !== null && item.edge_fraction !== undefined) {
+      if (state.configMeta[item.config_id].sat_edge_fraction !== item.edge_fraction) {
+        state.configMeta[item.config_id].sat_edge_fraction = item.edge_fraction;
+        changed = true;
+      }
+    }
+  });
+  if (changed) {
+    state.configOrder = null;
+  }
+  return changed;
 }
 
 function configLabel(configId) {
@@ -459,7 +485,7 @@ function drawCoverageChart(canvas, series) {
     ctx.fillText(`${i * 50}%`, x - 10, height - 4);
   }
   ctx.fillText("coverage", width - 58, height - 4);
-  ctx.fillText("latency ms", 2, topPad + 8);
+  ctx.fillText("latency gain ms", 2, topPad + 8);
 
   series.forEach((item) => {
     const points = item.points.sort((a, b) => a.x - b.x);
@@ -486,6 +512,16 @@ function drawCoverageChart(canvas, series) {
       ctx.fill();
     });
   });
+
+  canvas._coverageMeta = {
+    padding,
+    topPad,
+    width,
+    height,
+    minY,
+    spanY,
+    series,
+  };
 }
 
 function updateCharts() {
@@ -737,13 +773,11 @@ function updateCoverage(slot) {
       item?.edge_fraction ??
       meta?.sat_edge_fraction ??
       (meta?.sat === "SAT_TRANSPARENT" ? 0.0 : 1.0);
-    const p95 = item?.latency_p95_ms ?? lastAvailable(configId, "latency_p95_ms");
-    const fallback = item?.latency_edge_ms ?? lastAvailable(configId, "latency_edge_ms");
-    const latency = p95 ?? fallback;
-    if (latency === null || latency === undefined) return;
+    const gain = item?.latency_gain_ms ?? lastAvailable(configId, "latency_gain_ms");
+    if (gain === null || gain === undefined) return;
     const level = item?.sat_level || meta?.sat || "SAT";
     if (!grouped[level]) grouped[level] = [];
-    grouped[level].push({ x: coverage, y: latency });
+    grouped[level].push({ x: coverage, y: gain, configId });
   });
 
   const series = Object.keys(grouped).map((level) => {
@@ -752,11 +786,12 @@ function updateCoverage(slot) {
     points.forEach((point) => {
       const key = point.x.toFixed(2);
       if (!aggregated[key]) aggregated[key] = [];
-      aggregated[key].push(point.y);
+      aggregated[key].push(point);
     });
     const averaged = Object.entries(aggregated).map(([key, values]) => ({
       x: Number(key),
-      y: values.reduce((a, b) => a + b, 0) / values.length,
+      y: values.reduce((a, b) => a + b.y, 0) / values.length,
+      configId: values[0].configId,
     }));
     return {
       label: level,
@@ -770,10 +805,46 @@ function updateCoverage(slot) {
     elements.coverageLegend,
     series.map((item) => ({ label: item.label, color: item.color }))
   );
-  const usesFallback = series.length > 0 && !slot.available_sat;
-  elements.coverageNote.textContent = usesFallback
-    ? "p95 latency vs coverage (last SAT sample)"
-    : "p95 latency vs SAT coverage";
+  if (series.length === 0) {
+    elements.coverageNote.textContent = "no SAT samples yet";
+  } else {
+    const usesFallback = !slot.available_sat;
+    elements.coverageNote.textContent = usesFallback
+      ? "latency gain vs coverage (last SAT sample)"
+      : "latency gain vs SAT coverage";
+
+    if (elements.coverageTooltip) {
+      elements.coverageTooltip.textContent = "";
+    }
+  }
+
+}
+
+function bindCoverageTooltip() {
+  if (!elements.coverage) return;
+  elements.coverage.addEventListener("mousemove", (event) => {
+    const meta = elements.coverage._coverageMeta;
+    if (!meta) return;
+    const rect = elements.coverage.getBoundingClientRect();
+    const x = event.clientX - rect.left;
+    const y = event.clientY - rect.top;
+    let closest = null;
+    meta.series.forEach((series) => {
+      series.points.forEach((point) => {
+        const px = meta.padding + point.x * (meta.width - 2 * meta.padding);
+        const py = meta.height - meta.padding - ((point.y - meta.minY) / meta.spanY) * (meta.height - meta.padding - meta.topPad);
+        const dist = Math.hypot(px - x, py - y);
+        if (closest === null || dist < closest.dist) {
+          closest = { dist, point, label: series.label };
+        }
+      });
+    });
+    if (closest && closest.dist < 12 && elements.coverageTooltip) {
+      elements.coverageTooltip.textContent = `${closest.label} · ${closest.point.configId} · ${Math.round(closest.point.x * 100)}% → ${closest.point.y.toFixed(1)} ms`;
+    } else if (elements.coverageTooltip) {
+      elements.coverageTooltip.textContent = "";
+    }
+  });
 }
 
 function renderScoreboard(slot) {
@@ -853,6 +924,9 @@ async function fetchInfo() {
   const res = await fetch("/api/info");
   const data = await res.json();
   if (!data.ok) return null;
+  if (data.payload?.waiting && elements.coverageNote) {
+    elements.coverageNote.textContent = "waiting for first run";
+  }
   if (data.payload?.config_used?.edge_configs) {
     state.configOrder = null;
     data.payload.config_used.edge_configs.forEach((cfg) => {
@@ -879,21 +953,13 @@ async function fetchSlots() {
   if (!data.ok) return;
   state.slots = data.payload || [];
   state.slots.forEach((slot) => indexSlot(slot));
-  if (state.slots.length && Object.keys(state.configMeta).length === 0) {
-    state.configOrder = null;
+  if (state.slots.length) {
     const sample = state.slots[state.slots.length - 1];
-    sample.edge_results.forEach((item) => {
-      if (!state.configMeta[item.config_id]) {
-        state.configMeta[item.config_id] = {
-          config_id: item.config_id,
-          ter: item.ter_level,
-          sat: item.sat_level,
-          sat_edge_fraction: item.edge_fraction ?? null,
-        };
-      }
-    });
-    updateSelectionFromFilters();
-    renderConfigExplain();
+    const metaChanged = mergeConfigMetaFromSlot(sample);
+    if (metaChanged) {
+      updateSelectionFromFilters();
+      renderConfigExplain();
+    }
   }
   if (state.slots.length) {
     state.baseline = state.slots[state.slots.length - 1].baseline_config_id;
@@ -911,24 +977,27 @@ async function pollLatest() {
   if (!data.ok || !data.payload) return;
   const latest = data.payload;
   const lastSlot = state.slots[state.slots.length - 1];
+  if (lastSlot && latest.t_rel_s < lastSlot.t_rel_s) {
+    state.slots = [];
+    state.configMeta = {};
+    state.configOrder = null;
+    state.selected = new Set();
+    state.baseline = null;
+    state.cursor = 0;
+    state.live = true;
+    state.info = await fetchInfo();
+    await fetchSlots();
+    return;
+  }
   if (!lastSlot || latest.t_rel_s > lastSlot.t_rel_s) {
     indexSlot(latest);
     state.slots.push(latest);
-    if (Object.keys(state.configMeta).length === 0) {
-      state.configOrder = null;
-      latest.edge_results.forEach((item) => {
-        if (!state.configMeta[item.config_id]) {
-          state.configMeta[item.config_id] = {
-            config_id: item.config_id,
-            ter: item.ter_level,
-            sat: item.sat_level,
-            sat_edge_fraction: item.edge_fraction ?? null,
-          };
-        }
-      });
+    const metaChanged = mergeConfigMetaFromSlot(latest);
+    if (metaChanged) {
       updateSelectionFromFilters();
       renderConfigExplain();
     }
+    state.baseline = latest.baseline_config_id;
     if (state.live) {
       state.cursor = state.slots.length - 1;
     }
@@ -938,7 +1007,10 @@ async function pollLatest() {
 
 function render() {
   const slot = getSlotAtCursor();
-  if (!slot) return;
+  if (!slot) {
+    elements.scoreboardTable.innerHTML = "<div class=\"score-row\">Waiting for data…</div>";
+    return;
+  }
   updateHeader(slot, state.info);
   renderScoreboard(slot);
   updateCharts();
@@ -1038,10 +1110,15 @@ async function init() {
   state.info = await fetchInfo();
   await fetchSlots();
   setupControls();
+  bindCoverageTooltip();
   render();
 
   setInterval(async () => {
-    await pollLatest();
+    if (state.slots.length === 0) {
+      await fetchSlots();
+    } else {
+      await pollLatest();
+    }
     handlePlayback();
     render();
   }, 1000);

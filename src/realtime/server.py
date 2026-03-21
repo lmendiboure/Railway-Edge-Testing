@@ -3,6 +3,7 @@ from __future__ import annotations
 import json
 import threading
 from dataclasses import dataclass, field
+import os
 from datetime import datetime, timezone
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
@@ -14,8 +15,8 @@ from src.realtime.manifest import ScenarioConfig, load_realtime_manifest
 from src.realtime.runner import RealtimeRunner, load_scenario
 
 
-AGENT_ID = "railenium-edge-simulator"
-DISPLAY_NAME = "Railenium Edge Simulator"
+AGENT_ID = os.getenv("SIM_AGENT_ID", "railenium-edge-simulator")
+DISPLAY_NAME = os.getenv("SIM_DISPLAY_NAME", "Railenium Edge Simulator")
 
 
 def _json_response(handler: BaseHTTPRequestHandler, status: int, payload: Dict) -> None:

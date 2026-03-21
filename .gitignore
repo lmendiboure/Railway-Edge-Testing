@@ -1,0 +1,44 @@
+# Python
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.cache/
+*.log
+
+# Virtual environments
+.venv/
+venv/
+
+# Environment files
+.env
+.env.*
+
+# Build artifacts
+build/
+dist/
+*.egg-info/
+
+# Results / runs
+runs/
+runs_*/
+runs-*/
+runs_paper*/
+runs_sanity*/
+runs_realtime*/
+*_aggregated/
+
+# Realtime replay outputs
+runs/realtime_replay/
+
+# Generated scenarios
+scenarios/*.csv
+!scenarios/example_scenario.csv
+
+# Specs (local only)
+spec*.md
+spec*.txt
+
+# PDFs (local only)
+S5LECT Laboratory Orchestrator ICD.pdf

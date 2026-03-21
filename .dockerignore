@@ -1,0 +1,39 @@
+# Git
+.git/
+.gitignore
+
+# Python caches
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# Virtual envs
+.venv/
+venv/
+
+# Build artifacts
+build/
+dist/
+*.egg-info/
+
+# Logs
+*.log
+
+# Results / runs
+runs/
+runs_*/
+runs-*/
+runs_paper*/
+runs_sanity*/
+runs_realtime*/
+*_aggregated/
+
+# Realtime replay outputs
+runs/realtime_replay/
+
+# Large local docs/specs
+spec*.md
+spec*.txt
+*.pdf

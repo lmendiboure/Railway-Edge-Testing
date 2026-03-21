@@ -19,6 +19,48 @@ python3 -m venv .venv
 pip install -r requirements.txt
 ```
 
+## Docker deployment (VM)
+
+The platform can run as two containers:
+
+- `edge-simulator` (orchestrator endpoints + realtime replay)
+- `edge-gui` (reads outputs and renders the GUI)
+
+### 1) Prepare environment
+
+```
+cp .env.example .env
+```
+
+Adjust ports if needed:
+
+- `SIM_PORT` (default 8080)
+- `GUI_PORT` (default 8501)
+
+### 2) Launch
+
+```
+docker compose up --build
+```
+
+### 3) Verify
+
+```
+curl http://localhost:${SIM_PORT}/agents
+curl http://localhost:${SIM_PORT}/status/railenium-edge-simulator
+```
+
+GUI:
+`http://localhost:${GUI_PORT}`
+
+### 4) Start a realtime run
+
+```
+curl -s -X POST http://localhost:${SIM_PORT}/control/railenium-edge-simulator \
+  -H "Content-Type: application/json" \
+  -d '{"action":"start","configuration_name":"example_scenario"}'
+```
+
 ## Mode 1: Batch simulator (offline/paper runs)
 
 Run the simulator on a manifest, then aggregate metrics and generate plots.
