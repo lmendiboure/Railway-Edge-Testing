@@ -317,5 +317,32 @@ Edit `window_s` in `configs/realtime_edge_params.json`.
    +-------------------------+      +-------------------------+
    | Batch Aggregation       |      | Minimal GUI             |
    | scripts/analyze.py      |      | scripts/realtime_gui... |
-   +-------------------------+      +-------------------------+
+    +-------------------------+      +-------------------------+
+```
+
+## Architecture (Security)
+
+```
+                   +-----------------------------+
+                   |  Security Orchestrator API  |
+                   |  scripts/security_server.py |
+                   +-------------+---------------+
+                                 |
+                                 v
+                   +-----------------------------+
+                   |  Security Replay Runner     |
+                   |  src/security/runner.py     |
+                   +-------------+---------------+
+                                 |
+                                 v
+                   +-----------------------------+
+                   |  slot_metrics.jsonl         |
+                   |  runs/security/...          |
+                   +-------------+---------------+
+                                 |
+                                 v
+                   +-----------------------------+
+                   |  Minimal Security GUI       |
+                   |  scripts/security_gui...    |
+                   +-----------------------------+
 ```
