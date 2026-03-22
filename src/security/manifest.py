@@ -3,17 +3,18 @@ from __future__ import annotations
 import json
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Dict
+from typing import Dict, Optional
 
 
 @dataclass(frozen=True)
 class SecurityScenarioConfig:
     name: str
-    attack_csv_path: Path
+    attack_csv_path: Optional[Path]
     baseline_csv_path: Path
     attack_type: str
     target_segment: str
     slot_ms: int
+    mode: str
 
 
 def load_security_manifest(path: Path) -> Dict[str, SecurityScenarioConfig]:
@@ -26,8 +27,9 @@ def load_security_manifest(path: Path) -> Dict[str, SecurityScenarioConfig]:
     for name, cfg in data.items():
         if not isinstance(cfg, dict):
             continue
+        mode = str(cfg.get("mode") or "timeline").lower()
         attack_csv = cfg.get("attack_csv_path") or cfg.get("csv_path")
-        if not attack_csv:
+        if not attack_csv and mode != "interactive":
             continue
         baseline_csv = cfg.get("baseline_csv_path") or cfg.get("baseline_path")
         if not baseline_csv:
@@ -36,9 +38,11 @@ def load_security_manifest(path: Path) -> Dict[str, SecurityScenarioConfig]:
         attack_type = str(cfg.get("attack_type") or "generic")
         target_segment = str(cfg.get("target_segment") or cfg.get("target") or "5g")
 
-        attack_csv_path = Path(attack_csv)
-        if not attack_csv_path.is_absolute():
-            attack_csv_path = base_dir / attack_csv_path
+        attack_csv_path = None
+        if attack_csv:
+            attack_csv_path = Path(attack_csv)
+            if not attack_csv_path.is_absolute():
+                attack_csv_path = base_dir / attack_csv_path
         baseline_csv_path = Path(baseline_csv)
         if not baseline_csv_path.is_absolute():
             baseline_csv_path = base_dir / baseline_csv_path
@@ -50,6 +54,7 @@ def load_security_manifest(path: Path) -> Dict[str, SecurityScenarioConfig]:
             attack_type=attack_type,
             target_segment=target_segment,
             slot_ms=slot_ms,
+            mode=mode,
         )
 
     if not scenarios:

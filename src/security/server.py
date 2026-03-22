@@ -11,7 +11,12 @@ from typing import Dict, Optional
 from urllib.parse import parse_qs, urlparse
 
 from src.security.manifest import SecurityScenarioConfig, load_security_manifest
-from src.security.runner import SecurityRunner, load_attack_scenario, load_baseline
+from src.security.runner import (
+    SecurityRunner,
+    build_attack_rows_from_baseline,
+    load_attack_scenario,
+    load_baseline,
+)
 
 
 AGENT_ID = os.getenv("SECURITY_AGENT_ID", "railenium-security-simulator")
@@ -29,6 +34,21 @@ def _json_response(handler: BaseHTTPRequestHandler, status: int, payload: Dict) 
 
 def _now_iso() -> str:
     return datetime.now(timezone.utc).isoformat(timespec="milliseconds").replace("+00:00", "Z")
+
+
+def _parse_bool(value: object) -> Optional[bool]:
+    if value is None:
+        return None
+    if isinstance(value, bool):
+        return value
+    if isinstance(value, (int, float)):
+        return bool(value)
+    raw = str(value).strip().lower()
+    if raw in {"1", "true", "yes", "y", "on"}:
+        return True
+    if raw in {"0", "false", "no", "n", "off"}:
+        return False
+    return None
 
 
 @dataclass
@@ -61,8 +81,9 @@ class RunnerManager:
             if config is None:
                 missing.append(f"scenario:{config_name}")
             else:
-                if not config.attack_csv_path.exists():
-                    missing.append(str(config.attack_csv_path))
+                if config.mode != "interactive":
+                    if not config.attack_csv_path or not config.attack_csv_path.exists():
+                        missing.append(str(config.attack_csv_path))
                 if not config.baseline_csv_path.exists():
                     missing.append(str(config.baseline_csv_path))
         ready = not missing
@@ -72,12 +93,13 @@ class RunnerManager:
         config = self.scenarios.get(config_name)
         if config is None:
             return {"accepted": False, "status": "failed", "message": "unknown scenario"}
-        if not config.attack_csv_path.exists():
-            return {
-                "accepted": False,
-                "status": "failed",
-                "message": f"missing attack CSV: {config.attack_csv_path}",
-            }
+        if config.mode != "interactive":
+            if not config.attack_csv_path or not config.attack_csv_path.exists():
+                return {
+                    "accepted": False,
+                    "status": "failed",
+                    "message": f"missing attack CSV: {config.attack_csv_path}",
+                }
         if not config.baseline_csv_path.exists():
             return {
                 "accepted": False,
@@ -87,14 +109,30 @@ class RunnerManager:
         with self.lock:
             if self.runner and self.runner.state == "running":
                 return {"accepted": False, "status": "failed", "message": "runner busy"}
-            attack_rows = load_attack_scenario(config.attack_csv_path)
-            if not attack_rows:
+            baseline_rows = load_baseline(config.baseline_csv_path)
+            if not baseline_rows:
                 return {
                     "accepted": False,
                     "status": "failed",
-                    "message": "attack scenario empty",
+                    "message": "baseline scenario empty",
                 }
-            baseline_rows = load_baseline(config.baseline_csv_path)
+            if config.mode == "interactive":
+                attack_rows = build_attack_rows_from_baseline(baseline_rows)
+            else:
+                attack_csv_path = config.attack_csv_path
+                if attack_csv_path is None:
+                    return {
+                        "accepted": False,
+                        "status": "failed",
+                        "message": "missing attack CSV",
+                    }
+                attack_rows = load_attack_scenario(attack_csv_path)
+                if not attack_rows:
+                    return {
+                        "accepted": False,
+                        "status": "failed",
+                        "message": "attack scenario empty",
+                    }
             self.runner = SecurityRunner(
                 config.name,
                 config.slot_ms,
@@ -105,6 +143,7 @@ class RunnerManager:
                 self.output_root,
                 config.attack_type,
                 config.target_segment,
+                config.mode,
             )
             start_timestamp = self.runner.start(start_time)
         return {
@@ -112,6 +151,32 @@ class RunnerManager:
             "status": "started",
             "start_timestamp": start_timestamp,
         }
+
+    def set_attack(self, payload: Dict[str, object]) -> Dict[str, object]:
+        with self.lock:
+            if not self.runner or self.runner.state != "running":
+                return {"accepted": False, "status": "failed", "message": "runner not running"}
+            attack_type = payload.get("attack_type")
+            if attack_type is not None:
+                attack_type = str(attack_type)
+            target = payload.get("target")
+            if target is not None:
+                target = str(target)
+            intensity = payload.get("intensity")
+            intensity_value: Optional[float] = None
+            if isinstance(intensity, (int, float, str)):
+                try:
+                    intensity_value = float(intensity)
+                except ValueError:
+                    intensity_value = None
+            state = self.runner.set_attack(
+                attack_active=_parse_bool(payload.get("attack_active")),
+                attack_type=attack_type,
+                target=target,
+                intensity=intensity_value,
+                mitigation_active=_parse_bool(payload.get("mitigation_active")),
+            )
+        return {"accepted": True, "status": "updated", "state": state}
 
     def stop(self) -> Dict[str, object]:
         with self.lock:
@@ -202,6 +267,10 @@ class OrchestratorHandler(BaseHTTPRequestHandler):
 
         if action == "stop":
             _json_response(self, 200, self.manager.stop())
+            return
+
+        if action == "set_attack":
+            _json_response(self, 200, self.manager.set_attack(payload))
             return
 
         _json_response(self, 400, {"accepted": False, "status": "failed", "message": "unknown action"})

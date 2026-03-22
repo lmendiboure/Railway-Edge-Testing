@@ -69,7 +69,9 @@ services:
     environment:
       SECURITY_GUI_PORT: ${SECURITY_GUI_PORT:-8601}
       SECURITY_RUNS_DIR: ${SECURITY_RUNS_DIR:-/app/runs/security}
-      SECURITY_DEFAULT_SCENARIO: ${SECURITY_DEFAULT_SCENARIO:-dos_attack_demo}
+      SECURITY_DEFAULT_SCENARIO: ${SECURITY_DEFAULT_SCENARIO:-interactive_demo}
+      SECURITY_API_URL: ${SECURITY_API_URL:-http://security-simulator:8090}
+      SECURITY_AGENT_ID: ${SECURITY_AGENT_ID:-railenium-security-simulator}
     volumes:
       - ./runs:/app/runs:ro
       - ./configs:/app/configs:ro

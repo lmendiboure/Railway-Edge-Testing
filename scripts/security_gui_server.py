@@ -6,7 +6,9 @@ import os
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from typing import Optional
+from urllib.error import HTTPError, URLError
 from urllib.parse import parse_qs, urlparse
+from urllib.request import Request, urlopen
 
 
 def _read_last_json(path: Path) -> Optional[dict]:
@@ -93,6 +95,36 @@ class GuiHandler(BaseHTTPRequestHandler):
         self.end_headers()
         self.wfile.write(data)
 
+    def _proxy_control(self, payload: dict) -> None:
+        api_url = os.getenv("SECURITY_API_URL")
+        if not api_url:
+            security_port = os.getenv("SECURITY_PORT", "8090")
+            api_url = f"http://localhost:{security_port}"
+        agent_id = os.getenv("SECURITY_AGENT_ID", "railenium-security-simulator")
+        url = f"{api_url.rstrip('/')}/control/{agent_id}"
+        data = json.dumps(payload).encode("utf-8")
+        request = Request(url, data=data, headers={"Content-Type": "application/json"}, method="POST")
+        try:
+            with urlopen(request, timeout=3) as response:
+                body = response.read()
+                status = response.status
+                content_type = response.headers.get("Content-Type", "application/json")
+                self.send_response(status)
+                self.send_header("Content-Type", content_type)
+                self.send_header("Content-Length", str(len(body)))
+                self.end_headers()
+                self.wfile.write(body)
+        except HTTPError as exc:
+            body = exc.read()
+            content_type = exc.headers.get("Content-Type", "application/json")
+            self.send_response(exc.code)
+            self.send_header("Content-Type", content_type)
+            self.send_header("Content-Length", str(len(body)))
+            self.end_headers()
+            self.wfile.write(body)
+        except URLError:
+            self._json(502, {"ok": False, "message": "security api unreachable"})
+
     def do_GET(self) -> None:  # noqa: N802
         parsed = urlparse(self.path)
         path = parsed.path
@@ -162,6 +194,21 @@ class GuiHandler(BaseHTTPRequestHandler):
         self.send_header("Content-Length", str(len(data)))
         self.end_headers()
         self.wfile.write(data)
+
+    def do_POST(self) -> None:  # noqa: N802
+        parsed = urlparse(self.path)
+        path = parsed.path
+        if path != "/api/control":
+            self._json(404, {"ok": False, "message": "not found"})
+            return
+        length = int(self.headers.get("Content-Length", "0"))
+        raw = self.rfile.read(length).decode("utf-8") if length else "{}"
+        try:
+            payload = json.loads(raw)
+        except json.JSONDecodeError:
+            self._json(400, {"ok": False, "message": "bad json"})
+            return
+        self._proxy_control(payload)
 
 
 def main() -> None:

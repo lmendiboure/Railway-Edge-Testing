@@ -68,7 +68,7 @@ curl -s -X POST http://localhost:8080/control/railenium-edge-simulator \
 ```bash
 curl -s -X POST http://localhost:8090/control/railenium-security-simulator \
   -H "Content-Type: application/json" \
-  -d '{"action":"start","configuration_name":"dos_attack_demo"}'
+  -d '{"action":"start","configuration_name":"interactive_demo"}'
 ```
 
 ## 7) Consulter les logs

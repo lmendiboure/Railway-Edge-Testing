@@ -4,6 +4,14 @@
     "baseline_csv_path": "scenarios/example_scenario.csv",
     "attack_type": "dos",
     "target_segment": "5g",
-    "slot_ms": 1000
+    "slot_ms": 1000,
+    "mode": "timeline"
+  },
+  "interactive_demo": {
+    "baseline_csv_path": "scenarios/example_scenario.csv",
+    "attack_type": "dos",
+    "target_segment": "5g",
+    "slot_ms": 1000,
+    "mode": "interactive"
   }
 }

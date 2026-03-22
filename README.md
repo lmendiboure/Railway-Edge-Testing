@@ -19,6 +19,12 @@ python3 -m venv .venv
 pip install -r requirements.txt
 ```
 
+## Tests
+
+```
+PYTHONPATH=. python3 -m unittest
+```
+
 ## Docker deployment (VM)
 
 The platform can run two stacks:
@@ -197,6 +203,11 @@ Security scenarios are defined in `configs/security_manifest.json` and reference
 - Attack CSV: `scenarios/security/dos_attack_demo.csv`
 - Baseline CSV: `scenarios/example_scenario.csv`
 
+Available demo modes:
+
+- `interactive_demo`: baseline replay + live controls (no CSV attack timeline applied)
+- `dos_attack_demo`: CSV-driven timeline for reproducible runs
+
 Attack CSV columns:
 
 - `time`
@@ -225,7 +236,7 @@ PYTHONPATH=. python3 scripts/security_server.py \
 ```
 curl -s -X POST http://localhost:8090/control/railenium-security-simulator \
   -H "Content-Type: application/json" \
-  -d '{"action":"start","configuration_name":"dos_attack_demo"}'
+  -d '{"action":"start","configuration_name":"interactive_demo"}'
 ```
 
 Outputs are written to:
@@ -240,6 +251,13 @@ PYTHONPATH=. python3 scripts/security_gui_server.py \
 ```
 
 Open: `http://localhost:8601`
+
+The security GUI sends live control updates via:
+
+```
+POST /control/railenium-security-simulator
+{"action":"set_attack", "attack_active": true, "attack_type": "dos", "target": "5g", "intensity": 0.6}
+```
 
 ## Realtime edge parameters
 

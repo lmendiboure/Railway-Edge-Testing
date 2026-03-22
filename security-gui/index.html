@@ -35,6 +35,44 @@
       </section>
 
       <section class="panel">
+        <h2>Live Controls</h2>
+        <div class="controls">
+          <label class="control">
+            <span>Attack active</span>
+            <input type="checkbox" id="control-attack-active" />
+          </label>
+          <label class="control">
+            <span>Mitigation</span>
+            <input type="checkbox" id="control-mitigation-active" />
+          </label>
+          <label class="control">
+            <span>Attack type</span>
+            <select id="control-attack-type">
+              <option value="dos">DoS</option>
+              <option value="jamming">Jamming</option>
+              <option value="latency_spike">Latency spike</option>
+              <option value="loss">Loss</option>
+              <option value="edge_overload">Edge overload</option>
+            </select>
+          </label>
+          <label class="control">
+            <span>Target segment</span>
+            <select id="control-target">
+              <option value="5g">5G</option>
+              <option value="sat">SAT</option>
+              <option value="edge">Edge</option>
+            </select>
+          </label>
+          <label class="control range">
+            <span>Intensity</span>
+            <input type="range" id="control-intensity" min="0" max="1" step="0.05" value="0" />
+            <span id="control-intensity-value">0.00</span>
+          </label>
+        </div>
+        <p class="muted">Live controls override CSV attack timelines.</p>
+      </section>
+
+      <section class="panel">
         <h2>Baseline vs Impact</h2>
         <div id="metrics-table" class="table"></div>
       </section>

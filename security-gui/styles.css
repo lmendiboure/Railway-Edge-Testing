@@ -117,6 +117,39 @@ body {
   font-size: 13px;
 }
 
+.controls {
+  display: grid;
+  gap: 12px;
+  font-size: 13px;
+}
+
+.control {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 8px 10px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: #fbfaf7;
+}
+
+.control select,
+.control input[type="range"] {
+  flex: 1;
+  max-width: 200px;
+}
+
+.control.range {
+  align-items: center;
+}
+
+.control span:last-child {
+  min-width: 44px;
+  text-align: right;
+  color: var(--muted);
+}
+
 .table-row {
   display: grid;
   grid-template-columns: 140px 1fr 1fr;

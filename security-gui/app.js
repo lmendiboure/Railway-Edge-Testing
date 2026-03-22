@@ -21,6 +21,12 @@ const elements = {
   throughputChart: document.getElementById("throughput-chart"),
   latencyLegend: document.getElementById("latency-legend"),
   throughputLegend: document.getElementById("throughput-legend"),
+  controlAttackActive: document.getElementById("control-attack-active"),
+  controlMitigationActive: document.getElementById("control-mitigation-active"),
+  controlAttackType: document.getElementById("control-attack-type"),
+  controlTarget: document.getElementById("control-target"),
+  controlIntensity: document.getElementById("control-intensity"),
+  controlIntensityValue: document.getElementById("control-intensity-value"),
 };
 
 const colors = {
@@ -55,6 +61,9 @@ function updateHeader(slot) {
     elements.attackState.className = "pill";
     elements.mitigationState.textContent = "Mitigation: —";
     elements.mitigationState.className = "pill";
+    if (elements.controlIntensityValue) {
+      elements.controlIntensityValue.textContent = "0.00";
+    }
     return;
   }
   elements.scenarioName.textContent = slot.scenario || "—";
@@ -70,6 +79,74 @@ function updateHeader(slot) {
   const mitigationActive = slot.mitigation_active;
   elements.mitigationState.textContent = `Mitigation: ${mitigationActive ? "ON" : "OFF"}`;
   elements.mitigationState.className = mitigationActive ? "pill ok" : "pill";
+}
+
+function syncControls(slot) {
+  if (!slot) return;
+  if (elements.controlAttackActive) {
+    elements.controlAttackActive.checked = Boolean(slot.attack_active);
+  }
+  if (elements.controlMitigationActive) {
+    elements.controlMitigationActive.checked = Boolean(slot.mitigation_active);
+  }
+  if (elements.controlAttackType && slot.attack_type) {
+    elements.controlAttackType.value = slot.attack_type;
+  }
+  if (elements.controlTarget && slot.target_segment) {
+    elements.controlTarget.value = slot.target_segment;
+  }
+  if (elements.controlIntensity) {
+    const value = Number(slot.attack_intensity || 0);
+    elements.controlIntensity.value = value.toFixed(2);
+    if (elements.controlIntensityValue) {
+      elements.controlIntensityValue.textContent = value.toFixed(2);
+    }
+  }
+}
+
+async function postControl(payload) {
+  try {
+    await fetch("/api/control", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    });
+  } catch (error) {
+    // ignore network errors for now
+  }
+}
+
+function buildAttackPayload() {
+  const intensity = elements.controlIntensity
+    ? parseFloat(elements.controlIntensity.value || "0")
+    : 0;
+  return {
+    action: "set_attack",
+    attack_active: elements.controlAttackActive?.checked || false,
+    mitigation_active: elements.controlMitigationActive?.checked || false,
+    attack_type: elements.controlAttackType?.value || "dos",
+    target: elements.controlTarget?.value || "5g",
+    intensity: Number.isNaN(intensity) ? 0 : intensity,
+  };
+}
+
+function bindControls() {
+  if (!elements.controlAttackActive) return;
+  const sendUpdate = () => postControl(buildAttackPayload());
+  elements.controlAttackActive.addEventListener("change", sendUpdate);
+  elements.controlMitigationActive?.addEventListener("change", sendUpdate);
+  elements.controlAttackType?.addEventListener("change", sendUpdate);
+  elements.controlTarget?.addEventListener("change", sendUpdate);
+  if (elements.controlIntensity) {
+    elements.controlIntensity.addEventListener("input", () => {
+      if (elements.controlIntensityValue) {
+        elements.controlIntensityValue.textContent = Number(
+          elements.controlIntensity.value || 0
+        ).toFixed(2);
+      }
+    });
+    elements.controlIntensity.addEventListener("change", sendUpdate);
+  }
 }
 
 function renderMetricsTable(slot) {
@@ -299,6 +376,7 @@ async function pollLatest() {
 function render() {
   const slot = getSlotAtCursor();
   updateHeader(slot);
+  syncControls(slot);
   renderMetricsTable(slot);
   updateCharts();
 }
@@ -307,6 +385,7 @@ async function init() {
   state.info = await fetchInfo();
   await fetchSlots();
   render();
+  bindControls();
 
   setInterval(async () => {
     if (state.slots.length === 0) {

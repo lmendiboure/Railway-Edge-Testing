@@ -28,6 +28,15 @@ class AttackRow:
     mitigation_active: bool
 
 
+@dataclass(frozen=True)
+class AttackState:
+    attack_active: bool
+    attack_type: str
+    target: str
+    intensity: float
+    mitigation_active: bool
+
+
 ATTACK_EFFECTS: Dict[str, Dict[str, float]] = {
     "dos": {
         "latency_ms": 60.0,
@@ -172,6 +181,23 @@ def load_attack_scenario(csv_path: Path) -> List[AttackRow]:
     return rows
 
 
+def build_attack_rows_from_baseline(baseline_rows: List[BaselineRow]) -> List[AttackRow]:
+    rows: List[AttackRow] = []
+    for row in baseline_rows:
+        rows.append(
+            AttackRow(
+                time_ms=row.time_ms,
+                time_iso=_format_time_ms(row.time_ms),
+                attack_active=False,
+                attack_type=None,
+                target=None,
+                intensity=0.0,
+                mitigation_active=False,
+            )
+        )
+    return rows
+
+
 def _effect_for(attack_type: str) -> Dict[str, float]:
     return ATTACK_EFFECTS.get(attack_type.lower(), DEFAULT_EFFECT)
 
@@ -191,11 +217,12 @@ class SecurityRunner:
         slot_ms: int,
         attack_rows: List[AttackRow],
         baseline_rows: List[BaselineRow],
-        attack_csv_path: Path,
+        attack_csv_path: Optional[Path],
         baseline_csv_path: Path,
         output_root: Path,
         default_attack_type: str,
         default_target: str,
+        mode: str,
     ) -> None:
         self.scenario_name = scenario_name
         self.slot_ms = slot_ms
@@ -206,6 +233,7 @@ class SecurityRunner:
         self.output_root = output_root
         self.default_attack_type = default_attack_type
         self.default_target = default_target
+        self.mode = mode
         self.state = "stopped"
         self.last_error: Optional[str] = None
         self._thread: Optional[threading.Thread] = None
@@ -213,6 +241,13 @@ class SecurityRunner:
         self._lock = threading.Lock()
         self._latest_slot: Optional[Dict] = None
         self.run_dir: Optional[Path] = None
+        self._attack_state = AttackState(
+            attack_active=False,
+            attack_type=default_attack_type,
+            target=default_target,
+            intensity=0.0,
+            mitigation_active=False,
+        )
 
     def start(self, start_time: Optional[datetime]) -> str:
         if self.state == "running":
@@ -235,6 +270,49 @@ class SecurityRunner:
     def latest_slot(self) -> Optional[Dict]:
         with self._lock:
             return self._latest_slot
+
+    def set_attack(
+        self,
+        attack_active: Optional[bool] = None,
+        attack_type: Optional[str] = None,
+        target: Optional[str] = None,
+        intensity: Optional[float] = None,
+        mitigation_active: Optional[bool] = None,
+    ) -> Dict[str, object]:
+        with self._lock:
+            current = self._attack_state
+            new_attack_active = attack_active if attack_active is not None else current.attack_active
+            new_attack_type = attack_type if attack_type is not None else current.attack_type
+            new_target = target if target is not None else current.target
+            new_intensity = intensity if intensity is not None else current.intensity
+            new_mitigation = mitigation_active if mitigation_active is not None else current.mitigation_active
+            if new_attack_type is None:
+                new_attack_type = self.default_attack_type
+            if new_target is None:
+                new_target = self.default_target
+            try:
+                new_intensity_val = float(new_intensity)
+            except (TypeError, ValueError):
+                new_intensity_val = current.intensity
+            new_intensity_val = max(0.0, min(1.0, new_intensity_val))
+            self._attack_state = AttackState(
+                attack_active=bool(new_attack_active),
+                attack_type=str(new_attack_type),
+                target=str(new_target).lower(),
+                intensity=new_intensity_val,
+                mitigation_active=bool(new_mitigation),
+            )
+            return {
+                "attack_active": self._attack_state.attack_active,
+                "attack_type": self._attack_state.attack_type,
+                "target": self._attack_state.target,
+                "intensity": self._attack_state.intensity,
+                "mitigation_active": self._attack_state.mitigation_active,
+            }
+
+    def _get_attack_state(self) -> AttackState:
+        with self._lock:
+            return self._attack_state
 
     def _run_loop(self, start_time: Optional[datetime]) -> None:
         try:
@@ -357,13 +435,26 @@ class SecurityRunner:
         return {"impacted": impacted, "impact": impact}
 
     def _build_slot(self, row: AttackRow, baseline_row: Optional[BaselineRow], now_ms: int) -> Dict:
-        attack_type = row.attack_type or self.default_attack_type
-        target = (row.target or self.default_target).lower()
+        if self.mode == "interactive":
+            state = self._get_attack_state()
+            attack_type = state.attack_type or self.default_attack_type
+            target = state.target or self.default_target
+            attack_active = state.attack_active
+            intensity = state.intensity
+            mitigation_active = state.mitigation_active
+        else:
+            attack_type = row.attack_type or self.default_attack_type
+            target = row.target or self.default_target
+            attack_active = row.attack_active
+            intensity = row.intensity
+            mitigation_active = row.mitigation_active
+
+        target = str(target).lower()
         if target not in {"5g", "sat", "edge"}:
             target = self.default_target
 
         baseline = self._baseline_metrics(baseline_row, target)
-        result = self._apply_attack(baseline, attack_type, row.attack_active, row.intensity)
+        result = self._apply_attack(baseline, attack_type, attack_active, intensity)
         t0 = self.attack_rows[0].time_ms if self.attack_rows else row.time_ms
         t_rel_s = max(0.0, (row.time_ms - t0) / 1000.0)
 
@@ -373,9 +464,9 @@ class SecurityRunner:
             "scenario": self.scenario_name,
             "target_segment": target,
             "attack_type": attack_type,
-            "attack_active": row.attack_active,
-            "attack_intensity": row.intensity,
-            "mitigation_active": row.mitigation_active,
+            "attack_active": attack_active,
+            "attack_intensity": intensity,
+            "mitigation_active": mitigation_active,
             "baseline": baseline,
             "impacted": result["impacted"],
             "impact": result["impact"],
@@ -384,11 +475,12 @@ class SecurityRunner:
     def _write_config_used(self, run_dir: Path, start_dt: datetime) -> None:
         config_used = {
             "scenario_name": self.scenario_name,
-            "attack_csv_path": str(self.attack_csv_path),
+            "attack_csv_path": str(self.attack_csv_path) if self.attack_csv_path else None,
             "baseline_csv_path": str(self.baseline_csv_path),
             "slot_ms": self.slot_ms,
             "default_attack_type": self.default_attack_type,
             "default_target_segment": self.default_target,
+            "mode": self.mode,
             "start_timestamp": start_dt.isoformat(timespec="milliseconds").replace("+00:00", "Z"),
             "output_root": str(self.output_root),
         }
