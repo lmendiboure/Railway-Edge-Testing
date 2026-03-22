@@ -21,10 +21,17 @@ pip install -r requirements.txt
 
 ## Docker deployment (VM)
 
-The platform can run as two containers:
+The platform can run two stacks:
+
+Edge stack:
 
 - `edge-simulator` (orchestrator endpoints + realtime replay)
 - `edge-gui` (reads outputs and renders the GUI)
+
+Security stack:
+
+- `security-simulator` (orchestrator endpoints + security replay)
+- `security-gui` (reads outputs and renders the GUI)
 
 ### 1) Prepare environment
 
@@ -36,11 +43,25 @@ Adjust ports if needed:
 
 - `SIM_PORT` (default 8080)
 - `GUI_PORT` (default 8501)
+- `SECURITY_PORT` (default 8090)
+- `SECURITY_GUI_PORT` (default 8601)
 
 ### 2) Launch
 
 ```
-docker compose up --build
+docker compose --profile edge up --build
+```
+
+Security only:
+
+```
+docker compose --profile security up --build
+```
+
+Full stack:
+
+```
+docker compose --profile edge --profile security up --build
 ```
 
 ### 3) Verify
@@ -48,10 +69,14 @@ docker compose up --build
 ```
 curl http://localhost:${SIM_PORT}/agents
 curl http://localhost:${SIM_PORT}/status/railenium-edge-simulator
+curl http://localhost:${SECURITY_PORT}/agents
+curl http://localhost:${SECURITY_PORT}/status/railenium-security-simulator
 ```
 
 GUI:
-`http://localhost:${GUI_PORT}`
+
+- Edge: `http://localhost:${GUI_PORT}`
+- Security: `http://localhost:${SECURITY_GUI_PORT}`
 
 ### 4) Start a realtime run
 
@@ -59,6 +84,14 @@ GUI:
 curl -s -X POST http://localhost:${SIM_PORT}/control/railenium-edge-simulator \
   -H "Content-Type: application/json" \
   -d '{"action":"start","configuration_name":"example_scenario"}'
+```
+
+Start a security run:
+
+```
+curl -s -X POST http://localhost:${SECURITY_PORT}/control/railenium-security-simulator \
+  -H "Content-Type: application/json" \
+  -d '{"action":"start","configuration_name":"dos_attack_demo"}'
 ```
 
 ## Mode 1: Batch simulator (offline/paper runs)
@@ -151,6 +184,62 @@ PYTHONPATH=. python3 scripts/realtime_gui_server.py \
 ```
 
 Open: `http://localhost:8001`
+
+## Mode 3: Security simulator (skeleton)
+
+This mode replays an attack scenario against baseline metrics and emits minimal
+per-slot impacts (latency, jitter, loss, throughput).
+
+### 1) Prepare a security scenario
+
+Security scenarios are defined in `configs/security_manifest.json` and reference:
+
+- Attack CSV: `scenarios/security/dos_attack_demo.csv`
+- Baseline CSV: `scenarios/example_scenario.csv`
+
+Attack CSV columns:
+
+- `time`
+- `attack_active`
+- `attack_type`
+- `target`
+- `intensity`
+- `mitigation_active`
+
+Generate the example attack CSV (optional):
+
+```
+python3 scripts/generate_security_scenario.py
+```
+
+### 2) Start the security orchestrator server
+
+```
+PYTHONPATH=. python3 scripts/security_server.py \
+  --manifest configs/security_manifest.json \
+  --port 8090
+```
+
+### 3) Start a security scenario
+
+```
+curl -s -X POST http://localhost:8090/control/railenium-security-simulator \
+  -H "Content-Type: application/json" \
+  -d '{"action":"start","configuration_name":"dos_attack_demo"}'
+```
+
+Outputs are written to:
+`runs/security/<scenario>/<start_timestamp>/slot_metrics.jsonl`
+
+### 4) Optional security GUI
+
+```
+PYTHONPATH=. python3 scripts/security_gui_server.py \
+  --output-root runs/security \
+  --port 8601
+```
+
+Open: `http://localhost:8601`
 
 ## Realtime edge parameters
 

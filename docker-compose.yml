@@ -1,5 +1,6 @@
 services:
   edge-simulator:
+    profiles: ["edge"]
     build:
       context: .
       dockerfile: simulator/Dockerfile
@@ -20,6 +21,7 @@ services:
     restart: unless-stopped
 
   edge-gui:
+    profiles: ["edge"]
     build:
       context: .
       dockerfile: gui/Dockerfile
@@ -36,4 +38,43 @@ services:
       - "${GUI_PORT:-8501}:${GUI_PORT:-8501}"
     depends_on:
       - edge-simulator
+    restart: unless-stopped
+
+  security-simulator:
+    profiles: ["security"]
+    build:
+      context: .
+      dockerfile: security-simulator/Dockerfile
+    container_name: security-simulator
+    environment:
+      SECURITY_PORT: ${SECURITY_PORT:-8090}
+      SECURITY_AGENT_ID: ${SECURITY_AGENT_ID:-railenium-security-simulator}
+      SECURITY_CONFIG_DIR: ${SECURITY_CONFIG_DIR:-/app/configs}
+      SECURITY_SCENARIO_DIR: ${SECURITY_SCENARIO_DIR:-/app/scenarios}
+      SECURITY_RUNS_DIR: ${SECURITY_RUNS_DIR:-/app/runs/security}
+    volumes:
+      - ./scenarios:/app/scenarios:ro
+      - ./runs:/app/runs
+      - ./configs:/app/configs:ro
+    ports:
+      - "${SECURITY_PORT:-8090}:${SECURITY_PORT:-8090}"
+    restart: unless-stopped
+
+  security-gui:
+    profiles: ["security"]
+    build:
+      context: .
+      dockerfile: security-gui/Dockerfile
+    container_name: security-gui
+    environment:
+      SECURITY_GUI_PORT: ${SECURITY_GUI_PORT:-8601}
+      SECURITY_RUNS_DIR: ${SECURITY_RUNS_DIR:-/app/runs/security}
+      SECURITY_DEFAULT_SCENARIO: ${SECURITY_DEFAULT_SCENARIO:-dos_attack_demo}
+    volumes:
+      - ./runs:/app/runs:ro
+      - ./configs:/app/configs:ro
+    ports:
+      - "${SECURITY_GUI_PORT:-8601}:${SECURITY_GUI_PORT:-8601}"
+    depends_on:
+      - security-simulator
     restart: unless-stopped

@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Security Simulator</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <div class="bg"></div>
+    <header class="header">
+      <div>
+        <h1>Security Simulator</h1>
+        <p class="muted">Scenario: <span id="scenario-name">—</span></p>
+      </div>
+      <div class="status">
+        <div id="attack-state" class="pill">Attack: —</div>
+        <div id="mitigation-state" class="pill">Mitigation: —</div>
+      </div>
+    </header>
+
+    <main class="grid">
+      <section class="panel">
+        <h2>Attack Context</h2>
+        <div class="kv">
+          <div class="label">Timestamp</div>
+          <div id="slot-time">—</div>
+          <div class="label">Attack type</div>
+          <div id="attack-type">—</div>
+          <div class="label">Target segment</div>
+          <div id="target-segment">—</div>
+          <div class="label">Intensity</div>
+          <div id="attack-intensity">—</div>
+        </div>
+      </section>
+
+      <section class="panel">
+        <h2>Baseline vs Impact</h2>
+        <div id="metrics-table" class="table"></div>
+      </section>
+
+      <section class="panel">
+        <h2>Latency / Jitter</h2>
+        <div class="chart-block">
+          <div class="chart-title">Latency (ms)</div>
+          <canvas id="latency-chart"></canvas>
+        </div>
+        <div class="chart-block">
+          <div class="chart-title">Jitter (ms)</div>
+          <canvas id="jitter-chart"></canvas>
+        </div>
+        <div class="legend" id="latency-legend"></div>
+      </section>
+
+      <section class="panel">
+        <h2>Loss / Throughput</h2>
+        <div class="chart-block">
+          <div class="chart-title">Loss</div>
+          <canvas id="loss-chart"></canvas>
+        </div>
+        <div class="chart-block">
+          <div class="chart-title">Throughput (Mbps)</div>
+          <canvas id="throughput-chart"></canvas>
+        </div>
+        <div class="legend" id="throughput-legend"></div>
+      </section>
+    </main>
+
+    <script src="app.js"></script>
+  </body>
+</html>

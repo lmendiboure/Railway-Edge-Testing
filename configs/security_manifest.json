@@ -1,0 +1,9 @@
+{
+  "dos_attack_demo": {
+    "attack_csv_path": "scenarios/security/dos_attack_demo.csv",
+    "baseline_csv_path": "scenarios/example_scenario.csv",
+    "attack_type": "dos",
+    "target_segment": "5g",
+    "slot_ms": 1000
+  }
+}
