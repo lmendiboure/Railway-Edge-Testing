@@ -33,7 +33,7 @@ def load_security_manifest(path: Path) -> Dict[str, SecurityScenarioConfig]:
             continue
         baseline_csv = cfg.get("baseline_csv_path") or cfg.get("baseline_path")
         if not baseline_csv:
-            baseline_csv = "scenarios/example_scenario.csv"
+            baseline_csv = "scenarios/edge/example_scenario.csv"
         slot_ms = int(cfg.get("slot_ms", 1000))
         attack_type = str(cfg.get("attack_type") or "generic")
         target_segment = str(cfg.get("target_segment") or cfg.get("target") or "5g")

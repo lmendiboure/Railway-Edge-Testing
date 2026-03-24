@@ -11,17 +11,20 @@ Overview
 python3 scripts/generate_example_scenario.py
 ```
 
-- Ensure configs/realtime_manifest.json points to your CSV:
+- Option A: add the scenario to `configs/realtime_manifest.json`:
 
 ```
 {
   "example_scenario": {
-    "csv_path": "scenarios/example_scenario.csv",
+    "csv_path": "scenarios/edge/example_scenario.csv",
     "slot_ms": 1000,
     "output_dir": "runs_realtime/example_scenario"
   }
 }
 ```
+
+- Option B: drop a CSV into `scenarios/edge/` and use the filename as the
+  configuration_name (slot_ms defaults to 1000 unless overridden in the manifest).
 
 2) Start the server
 

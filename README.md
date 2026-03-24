@@ -160,7 +160,10 @@ This mode replays a CSV trace and computes edge-centric metrics per slot.
 
 ### 1) Prepare a scenario
 
-Scenario CSV is defined in `configs/realtime_manifest.json`.
+Scenario CSVs can be declared in `configs/realtime_manifest.json` or auto-discovered.
+Any CSV placed in `scenarios/edge/` is auto-registered as a scenario using the
+filename (without extension). Auto-discovered scenarios use `slot_ms=1000` unless
+you override them in the manifest.
 Columns required:
 
 - `time` (epoch seconds/ms or ISO-8601)
@@ -217,7 +220,7 @@ per-slot impacts (latency, jitter, loss, throughput).
 Security scenarios are defined in `configs/security_manifest.json` and reference:
 
 - Attack CSV: `scenarios/security/dos_attack_demo.csv`
-- Baseline CSV: `scenarios/example_scenario.csv`
+- Baseline CSV: `scenarios/edge/example_scenario.csv`
 
 Available demo modes:
 

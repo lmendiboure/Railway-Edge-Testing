@@ -78,6 +78,9 @@ curl -s -X POST http://localhost:8080/control/railenium-edge-simulator \
   -d '{"action":"start","configuration_name":"example_scenario"}'
 ```
 
+Note: tout CSV place dans `scenarios/edge/` est auto-detecte et utilisable via
+`configuration_name` = nom du fichier (sans extension).
+
 ```bash
 curl -s -X POST http://localhost:8090/control/railenium-security-simulator \
   -H "Content-Type: application/json" \

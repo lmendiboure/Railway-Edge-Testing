@@ -7,7 +7,7 @@ from pathlib import Path
 
 
 def main() -> None:
-    output_path = Path("scenarios/example_scenario.csv")
+    output_path = Path("scenarios/edge/example_scenario.csv")
     output_path.parent.mkdir(parents=True, exist_ok=True)
 
     start = datetime(2026, 2, 18, 12, 0, 0, tzinfo=timezone.utc)

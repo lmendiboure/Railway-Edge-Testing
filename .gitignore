@@ -33,8 +33,9 @@ runs_realtime*/
 runs/realtime_replay/
 
 # Generated scenarios
-scenarios/*.csv
-!scenarios/example_scenario.csv
+scenarios/**/*.csv
+!scenarios/edge/example_scenario.csv
+!scenarios/security/dos_attack_demo.csv
 
 # Specs (local only)
 spec*.md
