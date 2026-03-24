@@ -83,6 +83,13 @@ https://<IP_VM>:443/edge/
 https://<IP_VM>:443/security/
 ```
 
+Exemples curl (self-signed):
+
+```bash
+curl -k https://<IP_VM>/edge-api/agents
+curl -k https://<IP_VM>/security-api/agents
+```
+
 Generation d'un certificat self-signed:
 
 ```bash
