@@ -39,6 +39,10 @@ Security stack:
 - `security-simulator` (orchestrator endpoints + security replay)
 - `security-gui` (reads outputs and renders the GUI)
 
+Optional gateway:
+
+- `gateway` (reverse proxy to access GUIs/APIs without ports)
+
 ### 1) Prepare environment
 
 ```
@@ -51,6 +55,7 @@ Adjust ports if needed:
 - `GUI_PORT` (default 8501)
 - `SECURITY_PORT` (default 8090)
 - `SECURITY_GUI_PORT` (default 8601)
+- `GATEWAY_PORT` (default 80)
 
 ### 2) Launch
 
@@ -68,6 +73,12 @@ Full stack:
 
 ```
 docker compose --profile edge --profile security up --build
+
+Gateway (no ports in URLs):
+
+```
+docker compose --profile edge --profile security --profile gateway up --build
+```
 ```
 
 ### 3) Verify
@@ -83,6 +94,11 @@ GUI:
 
 - Edge: `http://localhost:${GUI_PORT}`
 - Security: `http://localhost:${SECURITY_GUI_PORT}`
+
+Gateway:
+
+- `http://localhost:${GATEWAY_PORT}/edge/`
+- `http://localhost:${GATEWAY_PORT}/security/`
 
 ### 4) Start a realtime run
 
@@ -363,4 +379,30 @@ Edit `window_s` in `configs/realtime_edge_params.json`.
                    |  Minimal Security GUI       |
                    |  scripts/security_gui...    |
                    +-----------------------------+
+```
+
+## Architecture (Gateway)
+
+```
+                   +-----------------------------+
+                   |        Nginx Gateway        |
+                   |        gateway/nginx.conf   |
+                   +-------------+---------------+
+                                 |
+          +----------------------+----------------------+
+          |                      |                      |
+          v                      v                      v
+   +--------------+      +-----------------+     +-------------------+
+   | /edge/       | ---> | edge-gui (8501) |     | /edge-api/         |
+   +--------------+      +-----------------+     +-------------------+
+                                              -> | edge-simulator    |
+                                                 | (8080)            |
+                                                 +-------------------+
+
+   +--------------+      +-------------------+   +-------------------+
+   | /security/   | ---> | security-gui      |   | /security-api/     |
+   +--------------+      | (8601)            |   +-------------------+
+                                              -> | security-simulator|
+                                                 | (8090)            |
+                                                 +-------------------+
 ```

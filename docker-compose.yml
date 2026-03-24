@@ -80,3 +80,14 @@ services:
     depends_on:
       - security-simulator
     restart: unless-stopped
+
+  gateway:
+    profiles: ["gateway"]
+    image: nginx:1.25-alpine
+    container_name: gateway
+    ports:
+      - "${GATEWAY_PORT:-80}:80"
+    volumes:
+      - ./gateway/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./gateway/index.html:/usr/share/nginx/html/index.html:ro
+    restart: unless-stopped

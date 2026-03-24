@@ -921,7 +921,7 @@ function handlePlayback() {
 }
 
 async function fetchInfo() {
-  const res = await fetch("/api/info");
+  const res = await fetch("api/info");
   const data = await res.json();
   if (!data.ok) return null;
   if (data.payload?.waiting && elements.coverageNote) {
@@ -948,7 +948,7 @@ async function fetchInfo() {
 }
 
 async function fetchSlots() {
-  const res = await fetch(`/api/slots?limit=${historyLimit * 4}`);
+  const res = await fetch(`api/slots?limit=${historyLimit * 4}`);
   const data = await res.json();
   if (!data.ok) return;
   state.slots = data.payload || [];
@@ -972,7 +972,7 @@ async function fetchSlots() {
 }
 
 async function pollLatest() {
-  const res = await fetch("/api/latest");
+  const res = await fetch("api/latest");
   const data = await res.json();
   if (!data.ok || !data.payload) return;
   const latest = data.payload;

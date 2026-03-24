@@ -106,7 +106,7 @@ function syncControls(slot) {
 
 async function postControl(payload) {
   try {
-    await fetch("/api/control", {
+    await fetch("api/control", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(payload),
@@ -335,14 +335,14 @@ function updateCharts() {
 }
 
 async function fetchInfo() {
-  const res = await fetch("/api/info");
+  const res = await fetch("api/info");
   const data = await res.json();
   if (!data.ok) return null;
   return data.payload;
 }
 
 async function fetchSlots() {
-  const res = await fetch(`/api/slots?limit=${state.historyLimit * 4}`);
+  const res = await fetch(`api/slots?limit=${state.historyLimit * 4}`);
   const data = await res.json();
   if (!data.ok) return;
   state.slots = data.payload || [];
@@ -352,7 +352,7 @@ async function fetchSlots() {
 }
 
 async function pollLatest() {
-  const res = await fetch("/api/latest");
+  const res = await fetch("api/latest");
   const data = await res.json();
   if (!data.ok || !data.payload) return;
   const latest = data.payload;
