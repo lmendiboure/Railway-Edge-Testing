@@ -56,6 +56,19 @@ def _find_latest_run(output_root: Path) -> Optional[Path]:
     return latest.parent
 
 
+CORS_ALLOW_ORIGIN = os.getenv("CORS_ALLOW_ORIGIN", "*")
+CORS_ALLOW_HEADERS = os.getenv(
+    "CORS_ALLOW_HEADERS",
+    "Content-Type, Authorization, X-Requested-With, Accept, Origin",
+)
+
+
+def _add_cors_headers(handler: BaseHTTPRequestHandler) -> None:
+    handler.send_header("Access-Control-Allow-Origin", CORS_ALLOW_ORIGIN)
+    handler.send_header("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
+    handler.send_header("Access-Control-Allow-Headers", CORS_ALLOW_HEADERS)
+
+
 class GuiHandler(BaseHTTPRequestHandler):
     base_dir: Path
     run_dir: Path
@@ -90,6 +103,7 @@ class GuiHandler(BaseHTTPRequestHandler):
         self.send_response(status)
         self.send_header("Content-Type", "application/json")
         self.send_header("Content-Length", str(len(data)))
+        _add_cors_headers(self)
         self.end_headers()
         self.wfile.write(data)
 
@@ -145,6 +159,7 @@ class GuiHandler(BaseHTTPRequestHandler):
         file_path = self.base_dir / path.lstrip("/")
         if not file_path.exists() or not file_path.is_file():
             self.send_response(404)
+            _add_cors_headers(self)
             self.end_headers()
             return
 
@@ -160,8 +175,15 @@ class GuiHandler(BaseHTTPRequestHandler):
         self.send_response(200)
         self.send_header("Content-Type", content_type)
         self.send_header("Content-Length", str(len(data)))
+        _add_cors_headers(self)
         self.end_headers()
         self.wfile.write(data)
+
+    def do_OPTIONS(self) -> None:  # noqa: N802
+        self.send_response(204)
+        _add_cors_headers(self)
+        self.send_header("Content-Length", "0")
+        self.end_headers()
 
 
 def main() -> None:

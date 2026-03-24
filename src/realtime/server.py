@@ -17,6 +17,17 @@ from src.realtime.runner import RealtimeRunner, load_scenario
 
 AGENT_ID = os.getenv("SIM_AGENT_ID", "railenium-edge-simulator")
 DISPLAY_NAME = os.getenv("SIM_DISPLAY_NAME", "Railenium Edge Simulator")
+CORS_ALLOW_ORIGIN = os.getenv("CORS_ALLOW_ORIGIN", "*")
+CORS_ALLOW_HEADERS = os.getenv(
+    "CORS_ALLOW_HEADERS",
+    "Content-Type, Authorization, X-Requested-With, Accept, Origin",
+)
+
+
+def _add_cors_headers(handler: BaseHTTPRequestHandler) -> None:
+    handler.send_header("Access-Control-Allow-Origin", CORS_ALLOW_ORIGIN)
+    handler.send_header("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
+    handler.send_header("Access-Control-Allow-Headers", CORS_ALLOW_HEADERS)
 
 
 def _json_response(handler: BaseHTTPRequestHandler, status: int, payload: Dict) -> None:
@@ -24,6 +35,7 @@ def _json_response(handler: BaseHTTPRequestHandler, status: int, payload: Dict) 
     handler.send_response(status)
     handler.send_header("Content-Type", "application/json")
     handler.send_header("Content-Length", str(len(data)))
+    _add_cors_headers(handler)
     handler.end_headers()
     handler.wfile.write(data)
 
@@ -105,6 +117,12 @@ class RunnerManager:
 
 class OrchestratorHandler(BaseHTTPRequestHandler):
     manager: RunnerManager
+
+    def do_OPTIONS(self) -> None:  # noqa: N802
+        self.send_response(204)
+        _add_cors_headers(self)
+        self.send_header("Content-Length", "0")
+        self.end_headers()
 
     def do_GET(self) -> None:  # noqa: N802
         parsed = urlparse(self.path)
