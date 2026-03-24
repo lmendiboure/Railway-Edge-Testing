@@ -79,6 +79,12 @@ Gateway (no ports in URLs):
 ```
 docker compose --profile edge --profile security --profile gateway up --build
 ```
+
+Gateway with HTTPS (self-signed):
+
+```
+docker compose --profile edge --profile security --profile gateway-https up --build
+```
 ```
 
 ### 3) Verify
@@ -99,6 +105,11 @@ Gateway:
 
 - `http://localhost:${GATEWAY_PORT}/edge/`
 - `http://localhost:${GATEWAY_PORT}/security/`
+
+Gateway (HTTPS):
+
+- `https://localhost:${GATEWAY_HTTPS_PORT}/edge/`
+- `https://localhost:${GATEWAY_HTTPS_PORT}/security/`
 
 ### 4) Start a realtime run
 

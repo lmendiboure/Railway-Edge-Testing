@@ -91,3 +91,16 @@ services:
       - ./gateway/nginx.conf:/etc/nginx/nginx.conf:ro
       - ./gateway/index.html:/usr/share/nginx/html/index.html:ro
     restart: unless-stopped
+
+  gateway-https:
+    profiles: ["gateway-https"]
+    image: nginx:1.25-alpine
+    container_name: gateway-https
+    ports:
+      - "${GATEWAY_HTTP_PORT:-80}:80"
+      - "${GATEWAY_HTTPS_PORT:-443}:443"
+    volumes:
+      - ./gateway/nginx-https.conf:/etc/nginx/nginx.conf:ro
+      - ./gateway/index.html:/usr/share/nginx/html/index.html:ro
+      - ./gateway/certs:/etc/nginx/certs:ro
+    restart: unless-stopped

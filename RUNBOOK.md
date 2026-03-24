@@ -47,6 +47,12 @@ Gateway (pas de ports dans les URLs):
 docker compose --profile edge --profile security --profile gateway up --build -d
 ```
 
+Gateway HTTPS (self-signed):
+
+```bash
+docker compose --profile edge --profile security --profile gateway-https up --build -d
+```
+
 ## 5) Verifier
 
 ```bash
@@ -68,6 +74,23 @@ Gateway:
 ```
 http://<IP_VM>:80/edge/
 http://<IP_VM>:80/security/
+```
+
+Gateway HTTPS:
+
+```
+https://<IP_VM>:443/edge/
+https://<IP_VM>:443/security/
+```
+
+Generation d'un certificat self-signed:
+
+```bash
+mkdir -p gateway/certs
+openssl req -x509 -nodes -days 365 -newkey rsa:2048 \
+  -keyout gateway/certs/server.key \
+  -out gateway/certs/server.crt \
+  -subj "/CN=localhost"
 ```
 
 ## 6) Demarrer un run de test
