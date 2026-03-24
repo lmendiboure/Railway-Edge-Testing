@@ -69,6 +69,9 @@ http://<IP_VM>:8501
 http://<IP_VM>:8601
 ```
 
+Note: la GUI suit automatiquement le dernier run lance, quel que soit le scenario.
+Pour la fixer sur un run specifique, lancer `security_gui_server.py --run-dir ...`.
+
 Gateway:
 
 ```

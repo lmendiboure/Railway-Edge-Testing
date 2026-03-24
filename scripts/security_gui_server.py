@@ -81,12 +81,7 @@ class GuiHandler(BaseHTTPRequestHandler):
     def _ensure_run_dir(self) -> None:
         if getattr(self, "fixed_run_dir", False):
             return
-        search_root = self.output_root
-        if self.default_scenario:
-            candidate = self.output_root / self.default_scenario
-            if candidate.exists():
-                search_root = candidate
-        latest = _find_latest_run(search_root)
+        latest = _find_latest_run(self.output_root)
         if latest is None:
             return
         current_slot = self.run_dir / "slot_metrics.jsonl"
@@ -256,14 +251,7 @@ def main() -> None:
         if not run_dir.is_absolute():
             run_dir = Path.cwd() / run_dir
     else:
-        default_scenario = os.getenv("SECURITY_DEFAULT_SCENARIO")
-        run_dir = None
-        if default_scenario:
-            candidate = output_root / default_scenario
-            if candidate.exists():
-                run_dir = _find_latest_run(candidate)
-        if run_dir is None:
-            run_dir = _find_latest_run(output_root)
+        run_dir = _find_latest_run(output_root)
         if run_dir is None:
             run_dir = output_root
 
