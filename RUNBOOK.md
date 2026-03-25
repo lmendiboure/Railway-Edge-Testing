@@ -93,14 +93,42 @@ curl -k https://<IP_VM>/edge-api/agents
 curl -k https://<IP_VM>/security-api/agents
 ```
 
-Generation d'un certificat self-signed:
+Generation d'un certificat self-signed (avec SAN pour IP/hostname):
 
 ```bash
 mkdir -p gateway/certs
 openssl req -x509 -nodes -days 365 -newkey rsa:2048 \
   -keyout gateway/certs/server.key \
   -out gateway/certs/server.crt \
-  -subj "/CN=localhost"
+  -subj "/CN=<IP_VM>" \
+  -addext "subjectAltName=IP:<IP_VM>,DNS=<HOSTNAME>"
+```
+
+Truststore / clients (auto-signed):
+
+- curl:
+
+```bash
+curl --cacert /path/to/server.crt https://<IP_VM>/security-api/agents
+```
+
+- Python requests:
+
+```python
+requests.get("https://<IP_VM>/security-api/agents", verify="/path/to/server.crt")
+```
+
+- Node:
+
+```bash
+export NODE_EXTRA_CA_CERTS=/path/to/server.crt
+```
+
+- Java (truststore):
+
+```bash
+keytool -importcert -file /path/to/server.crt -alias gateway \
+  -keystore truststore.jks -storepass changeit
 ```
 
 ## 6) Demarrer un run de test
